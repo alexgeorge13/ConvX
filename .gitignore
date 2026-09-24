@@ -1,0 +1,22 @@
+# Python environments and bytecode
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Local datasets (provide these locally; do not commit dataset contents)
+data_sbd/
+data_voc/
+
+# Generated checkpoints, plots, metrics, and previews
+models/*.pth
+plots/
+metrics/
+scribble_previews/
+
+# Editor and OS files
+.vscode/.ropeproject/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

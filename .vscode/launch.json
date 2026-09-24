@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Train ConvX",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.train_convx",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Train classifier baseline",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.train_classifier",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Train ConvX+ mask",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.train_convx_plus_mask",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Train ConvX+ scribble",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.train_convx_plus_scribble",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Evaluate explainability",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "scripts.run_explainability_metrics",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+Metadata-Version: 2.4
+Name: convx-xai
+Version: 0.1.0
+Summary: ConvX explainable image classification and ConvX+ weakly supervised localization
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
+# ConvX
+
+ConvX is a fully convolutional explainable image-classification method. The network produces class scores and class-specific spatial heatmaps in one forward pass. ConvX+ adds optional pixel-level supervision from segmentation masks or sparse scribble annotations.
+
+This repository is organized from the supplied working code and the accompanying paper. The model and training procedures are retained; files are grouped into a reusable package and runnable scripts. Dataset files, checkpoints, generated plots, and the original virtual environment are intentionally kept out of the repository.
+
+## Paper
+
+Alex George, Lyudmila Mihaylova, and Sean Anderson, “ConvX: Efficient XAI for Real-Time Computer Vision with Single Forward-Pass Explanations.” The supplied manuscript reports mIoU 0.35 for image-label-only ConvX, 0.48 for ConvX+ with five dense masks per class, and 0.45 with five scribble annotations per class. These are reported paper results, not a guarantee that every local run will reproduce them.
+
+## Repository layout
+
+```text
+ConvX/
+├── src/convx/          # Model, losses, datasets, metrics, and training engines
+├── scripts/            # Training, evaluation, data, and visualization entry points
+├── data_sbd/           # Local SBD dataset (not tracked by Git)
+├── data_voc/           # Local PASCAL VOC dataset (not tracked by Git)
+├── data_scribbles/     # Local scribble annotations (not tracked by Git)
+├── models/             # Generated model checkpoints (not tracked by Git)
+├── plots/              # Generated visualizations (not tracked by Git)
+├── metrics/            # Generated metric reports (not tracked by Git)
+├── requirements.txt
+└── pyproject.toml
+```
+
+The small `supervised_indices_5_per_class.json` file is included so the five-per-class training subset can use the same saved sample indices as the supplied project.
+
+## Setup in VS Code on Windows
+
+Open this folder (`ConvX`) in VS Code, then run these commands in its integrated PowerShell terminal:
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -e .
+```
+
+If you need a particular CUDA-enabled PyTorch build, install the matching `torch` and `torchvision` packages for your machine using the official PyTorch selector before installing the remaining requirements. The first model run may also download torchvision's pretrained ResNet-50 weights.
+
+### GPU / CUDA troubleshooting (Windows)
+
+ConvX chooses its compute device automatically: `src/convx/config.py` sets `DEVICE` to `cuda` when `torch.cuda.is_available()` is true, and otherwise uses the CPU. This means no code change is normally needed to switch between CPU and an available NVIDIA GPU. However, automatic selection cannot add CUDA support to a CPU-only PyTorch installation. For example, `torch 2.14.0+cpu`, `torch.version.cuda == None`, and `torch.cuda.is_available() == False` indicate that the active environment has a CPU-only build; training will run on the CPU even if an NVIDIA GPU is installed.
+
+First, activate the project's virtual environment in the VS Code terminal and check which Python and PyTorch that terminal is using:
+
+```powershell
+python -c "import sys, torch; print('Python:', sys.executable); print('PyTorch:', torch.__version__); print('CUDA build:', torch.version.cuda); print('CUDA available:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'not detected')"
+```
+
+Make sure `Python:` points to this repository's `.venv\Scripts\python.exe`. If `CUDA available` is `False` and `PyTorch` ends in `+cpu`, use the [official PyTorch installation selector](https://pytorch.org/get-started/locally/) to choose Windows, Pip, Python, and a CUDA compute platform supported by your NVIDIA driver. Run the generated installation command in the activated `.venv`, then rerun the check above. Also check that `nvidia-smi` detects the GPU and that VS Code is using the same `.venv` interpreter. The exact install command depends on the PyTorch release and supported driver, so use the selector rather than copying a stale version-specific command.
+
+The project's device choice is printed at the start of its training scripts as `Target Compute Unit`. If it says `cpu`, PyTorch does not currently expose CUDA in the interpreter running the script. Installing a CUDA-enabled PyTorch build is a separate environment setup step; `requirements.txt` intentionally does not force a CUDA wheel because the correct build depends on the user's system.
+
+The included VS Code launch configurations set the working directory to the repository root. When running commands in a terminal, run them from this root folder because dataset and output paths in the existing scripts are relative to it.
+
+## Data
+
+Before training or generating scribbles, run the dataset preparation script from the repository root:
+
+```powershell
+python -m scripts.prepare_data
+```
+
+It downloads and validates the SBD `train_noval` segmentation split in `data_sbd` and the PASCAL VOC 2012 validation split in `data_voc`. Torchvision skips a dataset when it is already present and valid. The first run needs internet access; the dataset files are not included in this repository. Use `python -m scripts.prepare_data --sbd-only` when you only need SBD for the scribble annotator, or `--voc-only` to prepare only VOC. See the [Torchvision dataset documentation](https://docs.pytorch.org/vision/stable/datasets.html) for details.
+
+For scribble-supervised runs, put the generated `.npy` annotations in `data_scribbles` using the `scribble_<dataset-index>.npy` naming convention. Run the annotator from the repository root with:
+
+```powershell
+python -m scripts.generate_scribbles
+```
+
+## Common commands
+
+Run these from the repository root after setup. Prepare the datasets first with `python -m scripts.prepare_data`.
+
+```powershell
+# Train/evaluate the image-label-only ConvX model
+python -m scripts.train_convx
+
+# Train the standard classifier baseline
+python -m scripts.train_classifier
+
+# Train ConvX+ with dense masks or sparse scribbles
+python -m scripts.train_convx_plus_mask
+python -m scripts.train_convx_plus_scribble
+
+# Run data pipeline diagnostics
+python -m scripts.verify_pipeline
+python -m scripts.verify_scribble_dataset
+
+# Run paper evaluation and visualization workflows
+python -m scripts.run_explainability_metrics
+python -m scripts.run_timing
+python -m scripts.visual_comparison
+python -m scripts.other_plots
+```
+
+Training and evaluation scripts write checkpoints beneath `models/` and generated artifacts beneath `plots/` or `metrics/`. These paths are ignored by Git. Some evaluation scripts require checkpoints from the corresponding training runs.
+
+## Notes before publishing
+
+No license was supplied with the source materials, so this repository does not declare one. Choose and add a license if you intend to publish the code for reuse. Confirm that any dataset files, pretrained weights, figures, or other third-party materials you add are permitted for redistribution.
